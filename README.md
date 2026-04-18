@@ -1,6 +1,6 @@
 # PocketLedger — Personal Finance Tracker
 
-[![Android CI](https://github.com/krit-vardhan-mishra/PocketLedger/actions/workflows/android.yml/badge.svg)](https://github.com/krit-vardhan-mishra/PocketLedger/actions/workflows/android.yml)
+[![Android CI](https://github.com/krit-vardhan-mishra/pocket-ledger/blob/main/.github/workflows/android.yml/badge.svg)](https://github.com/krit-vardhan-mishra/pocket-ledger/blob/main/.github/workflows/android.yml)
 
 **PocketLedger** is a high-performance, offline-first personal finance application built natively for Android. It combines modern architecture with a privacy-centric design to help users track their spending without compromising their data.
 
