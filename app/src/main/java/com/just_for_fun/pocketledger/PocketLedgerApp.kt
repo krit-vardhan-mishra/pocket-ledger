@@ -1,30 +1,36 @@
 package com.just_for_fun.pocketledger
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
-
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.ExistingPeriodicWorkPolicy
-import com.just_for_fun.pocketledger.worker.DailyBudgetWorker
-import java.util.concurrent.TimeUnit
+import com.just_for_fun.pocketledger.worker.DailyBudgetWorkScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltAndroidApp
-class PocketLedgerApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        scheduleDailyWorker()
-    }
+class PocketLedgerApp : Application(), Configuration.Provider {
 
-    private fun scheduleDailyWorker() {
-        val workRequest = PeriodicWorkRequestBuilder<DailyBudgetWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(1, TimeUnit.HOURS)
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var dailyBudgetWorkScheduler: DailyBudgetWorkScheduler
+
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
             .build()
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "DailyBudgetCheck",
-            ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
+    override fun onCreate() {
+        super.onCreate()
+        appScope.launch {
+            dailyBudgetWorkScheduler.syncWithCurrentSettings()
+        }
     }
 }

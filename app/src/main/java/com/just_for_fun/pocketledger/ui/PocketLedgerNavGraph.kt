@@ -19,16 +19,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.just_for_fun.pocketledger.ui.budget.BudgetScreen
-import com.just_for_fun.pocketledger.ui.dashboard.AddTransactionSheet
 import com.just_for_fun.pocketledger.ui.dashboard.DashboardScreen
 import com.just_for_fun.pocketledger.ui.history.HistoryScreen
 import com.just_for_fun.pocketledger.ui.statistics.StatisticsScreen
-import com.just_for_fun.pocketledger.ui.transaction.TransactionViewModel
-import com.just_for_fun.pocketledger.ui.transaction.TransactionUiState
-import com.just_for_fun.pocketledger.data.model.enums.TransactionType as DomainTransactionType
-import com.just_for_fun.pocketledger.data.model.enums.TransactionType as UiTransactionType
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
@@ -41,19 +35,8 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 fun PocketLedgerNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = Screen.Dashboard.route,
-    transactionViewModel: TransactionViewModel = hiltViewModel()
+    startDestination: String = Screen.Dashboard.route
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
-    val transactionState by transactionViewModel.uiState.collectAsState()
-
-    LaunchedEffect(transactionState) {
-        if (transactionState is TransactionUiState.Success) {
-            showAddDialog = false
-            transactionViewModel.resetState()
-        }
-    }
-
     val items = listOf(
         Screen.Dashboard,
         Screen.Statistics,
@@ -93,8 +76,7 @@ fun PocketLedgerNavGraph(
         ) {
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
-                    onNavigateToStatistics = { navController.navigate(Screen.Statistics.route) },
-                    onAddTransactionClick = { showAddDialog = true }
+                    onNavigateToStatistics = { navController.navigate(Screen.Statistics.route) }
                 )
             }
             composable(Screen.Statistics.route) {
@@ -106,25 +88,6 @@ fun PocketLedgerNavGraph(
             composable(Screen.History.route) {
                 HistoryScreen()
             }
-        }
-
-        if (showAddDialog) {
-            AddTransactionSheet(
-                onDismissRequest = { 
-                    showAddDialog = false 
-                    transactionViewModel.resetState()
-                },
-                onSaveTransaction = { amount, type, category, note, dateMillis ->
-                    transactionViewModel.addTransaction(
-                        note = note.ifBlank { category.name },
-                        amount = amount,
-                        category = category,
-                        type = if (type == UiTransactionType.INCOME) 
-                            DomainTransactionType.INCOME else DomainTransactionType.EXPENSE,
-                        date = dateMillis
-                    )
-                }
-            )
         }
     }
 }

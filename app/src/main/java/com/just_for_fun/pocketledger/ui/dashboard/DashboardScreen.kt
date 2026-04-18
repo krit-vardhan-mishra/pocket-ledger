@@ -6,46 +6,42 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.data.model.enums.displayName
 import com.just_for_fun.pocketledger.ui.components.CategoryChip
 import com.just_for_fun.pocketledger.ui.components.MetricCard
 import com.just_for_fun.pocketledger.ui.components.TransactionCard
+import com.just_for_fun.pocketledger.ui.components.iconForCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToStatistics: () -> Unit,
-    onAddTransactionClick: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val summary by viewModel.monthlySummary.collectAsState()
-    val recentTransactions by viewModel.recentTransactions.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val transactions by viewModel.filteredTransactions.collectAsState()
+    val exceededCategories by viewModel.exceededCategories.collectAsState()
+
+    var showSheet by remember { mutableStateOf(false) }
+    var editingTransactionId by remember { mutableStateOf<Long?>(null) }
+    val editingTransaction = remember(transactions, editingTransactionId) {
+        transactions.firstOrNull { it.id == editingTransactionId }
+    }
 
     val monthlyIncome = summary?.totalIncome ?: 0.0
     val monthlyExpense = summary?.totalExpense ?: 0.0
     val netBalance = summary?.balance ?: 0.0
-    
-    var selectedCategory by remember { mutableStateOf<Category?>(null) }
-    
-    val filteredTransactions = if (selectedCategory == null) {
-        recentTransactions
-    } else {
-        recentTransactions.filter { it.category == selectedCategory }
-    }
 
     Scaffold(
         topBar = {
@@ -58,7 +54,10 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddTransactionClick,
+                onClick = {
+                    editingTransactionId = null
+                    showSheet = true
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -133,17 +132,18 @@ fun DashboardScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 ) {
                     item {
-                        CategoryChip(
-                            category = Category.OTHER, // Using OTHER as placeholder for "All" in UI
-                            isSelected = selectedCategory == null,
-                            onCategorySelected = { selectedCategory = null }
+                        FilterChip(
+                            selected = selectedCategory == null,
+                            onClick = { viewModel.filterByCategory(null) },
+                            label = { Text("All Categories") }
                         )
                     }
                     items(Category.entries.toTypedArray()) { category ->
                         CategoryChip(
                             category = category,
                             isSelected = selectedCategory == category,
-                            onCategorySelected = { selectedCategory = category }
+                            isAlert = category in exceededCategories,
+                            onCategorySelected = { viewModel.filterByCategory(category) }
                         )
                     }
                 }
@@ -151,22 +151,35 @@ fun DashboardScreen(
             
             item {
                 Text(
-                    text = "Recent Transactions",
+                    text = "Today's Transactions",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
             }
             
-            items(filteredTransactions) { transaction ->
+            if (transactions.isEmpty()) {
+                item {
+                    Text(
+                        text = "No transactions for today",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            items(transactions) { transaction ->
                 TransactionCard(
                     amount = transaction.amount,
-                    type = if (transaction.type == TransactionType.INCOME) TransactionType.INCOME else TransactionType.EXPENSE,
-                    categoryName = transaction.category.name,
+                    type = transaction.type,
+                    categoryName = transaction.category.displayName(),
                     note = transaction.note,
-                    icon = getIconForCategory(transaction.category),
-                    onDelete = { /* TODO */ },
-                    onClick = { /* TODO */ }
+                    icon = iconForCategory(transaction.category),
+                    onDelete = { viewModel.deleteTransaction(transaction.id) },
+                    onClick = {
+                        editingTransactionId = transaction.id
+                        showSheet = true
+                    }
                 )
             }
             
@@ -175,15 +188,26 @@ fun DashboardScreen(
             }
         }
     }
-}
 
-@Composable
-fun getIconForCategory(category: Category): ImageVector {
-    return when (category) {
-        Category.FOOD -> Icons.Default.Restaurant
-        Category.TRANSPORT -> Icons.Default.DirectionsCar
-        Category.SHOPPING -> Icons.Default.ShoppingCart
-        Category.SALARY -> Icons.Default.AttachMoney
-        else -> Icons.Default.Add // Default icon
+    if (showSheet) {
+        AddTransactionSheet(
+            initialTransaction = editingTransaction,
+            onDismissRequest = {
+                showSheet = false
+                editingTransactionId = null
+            },
+            onSaveTransaction = { formData ->
+                viewModel.saveTransaction(
+                    id = formData.id,
+                    amount = formData.amount,
+                    type = formData.type,
+                    category = formData.category,
+                    note = formData.note,
+                    date = formData.dateMillis
+                )
+                showSheet = false
+                editingTransactionId = null
+            }
+        )
     }
 }

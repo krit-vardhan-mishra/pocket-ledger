@@ -1,8 +1,13 @@
 package com.just_for_fun.pocketledger.data.repository
 
 import com.just_for_fun.pocketledger.data.db.dao.TransactionDao
+import com.just_for_fun.pocketledger.data.model.CategoryTotal
+import com.just_for_fun.pocketledger.data.model.DailyTotal
 import com.just_for_fun.pocketledger.data.model.Transaction
+import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,4 +45,51 @@ class TransactionRepository @Inject constructor(
 
     fun getMonthlyExpenseTotal(month: String, year: String): Flow<Double> =
         transactionDao.getMonthlyExpenseTotal(month, year)
+
+    fun getCategoryTotals(
+        month: String,
+        year: String,
+        type: TransactionType = TransactionType.EXPENSE
+    ): Flow<List<CategoryTotal>> {
+        return getTransactionsByMonth(month, year).map { transactions ->
+            val filtered = transactions.filter { it.type == type }
+            val total = filtered.sumOf { it.amount }
+            if (total <= 0.0) {
+                emptyList()
+            } else {
+                filtered.groupBy { it.category }
+                    .map { (category, items) ->
+                        val amount = items.sumOf { it.amount }
+                        CategoryTotal(
+                            category = category,
+                            amount = amount,
+                            percentage = ((amount / total) * 100.0).toFloat()
+                        )
+                    }
+                    .sortedByDescending { it.amount }
+            }
+        }
+    }
+
+    fun getDailyTotals(
+        month: String,
+        year: String,
+        type: TransactionType = TransactionType.EXPENSE
+    ): Flow<List<DailyTotal>> {
+        return getTransactionsByMonth(month, year).map { transactions ->
+            transactions
+                .filter { it.type == type }
+                .groupBy { transaction ->
+                    Calendar.getInstance().apply { timeInMillis = transaction.date }
+                        .get(Calendar.DAY_OF_MONTH)
+                }
+                .map { (day, items) ->
+                    DailyTotal(
+                        dayOfMonth = day,
+                        amount = items.sumOf { it.amount }
+                    )
+                }
+                .sortedBy { it.dayOfMonth }
+        }
+    }
 }

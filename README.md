@@ -10,7 +10,7 @@
 - **Modern Jetpack Compose UI:** A fluid, interactive interface inspired by Material 3 design principles.
 - **Intelligent Budgeting:** Set monthly limits per category and get real-time visual warnings (Red chips) when you're over-budget.
 - **Proactive Notifications:** Receive daily summaries at your preferred time using Android's WorkManager API.
-- **Rich Analytics:** Beautiful Donut and Bar charts to visualize spending categories and daily trends.
+- **Rich Analytics:** Interactive donut and daily bar charts (Compose Canvas) with tap selection and contextual summaries.
 - **CSV Export:** Share your transaction records for external auditing or backups.
 
 ## 🛠️ Technical Deep Dive
@@ -27,24 +27,32 @@ PocketLedger follows the **MVVM (Model-View-ViewModel)** architecture pattern.
 - **Dependency Injection:** Hilt (Dagger)
 - **Asynchronous:** Kotlin Coroutines & Flow
 - **Local Storage:** Room Persistence Library
+- **App Settings:** DataStore Preferences
 - **Background Tasks:** WorkManager
-- **Charts:** MPAndroidChart
+- **Charts:** Custom Compose Canvas charts
 - **CI/CD:** GitHub Actions (automated testing on every push)
 
 ## 🧪 Testing
 Quality is baked into the code:
-- **Unit Testing:** ViewModel and Repository layers tested using JUnit4 and MockK.
-- **Database Testing:** In-memory Room tests to ensure data integrity.
-- **Continuous Integration:** Every commit is verified by our GitHub Actions pipeline.
+- **Unit Testing:** ViewModel and repository behavior tested with JUnit4, MockK, and coroutines-test.
+- **Coverage Reports:** JaCoCo HTML/XML reports via `:app:jacocoTestReport`.
+- **Continuous Integration:** Every commit runs tests, assembles debug APK, and uploads test + coverage reports.
 
 ## 📁 Repository Structure
 ```text
-app/src/main/java/com/kritvm/pocketledger/
+app/src/main/java/com/just_for_fun/pocketledger/
 ├── data/       # Persistence (Room), Models, and Repositories
 ├── domain/     # Logic specific to business rules (UseCases)
 ├── ui/         # All UI components, screens, and ViewModels
 ├── worker/     # Android WorkManager background tasks
 └── di/         # Dependency Injection modules for Hilt
+```
+
+## ✅ Useful Commands
+```bash
+./gradlew test
+./gradlew :app:assembleDebug
+./gradlew :app:jacocoTestReport
 ```
 
 ## 📦 Getting Started

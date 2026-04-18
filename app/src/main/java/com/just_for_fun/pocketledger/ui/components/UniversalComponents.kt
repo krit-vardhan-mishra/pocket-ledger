@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.data.model.enums.displayName
 
 @Composable
 fun MetricCard(
@@ -58,18 +59,30 @@ fun MetricCard(
 fun CategoryChip(
     category: Category,
     isSelected: Boolean,
+    isAlert: Boolean = false,
     onCategorySelected: (Category) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val backgroundColor = when {
+        isSelected -> MaterialTheme.colorScheme.primaryContainer
+        isAlert -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = when {
+        isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+        isAlert -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Surface(
         modifier = modifier
             .clip(RoundedCornerShape(24.dp))
             .clickable { onCategorySelected(category) },
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        color = backgroundColor,
+        contentColor = contentColor
     ) {
         Text(
-            text = category.name,
+            text = category.displayName(),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelLarge
         )
