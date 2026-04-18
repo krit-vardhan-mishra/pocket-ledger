@@ -15,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.ui.components.CategoryChip
@@ -27,21 +29,23 @@ import com.just_for_fun.pocketledger.ui.components.TransactionCard
 @Composable
 fun DashboardScreen(
     onNavigateToStatistics: () -> Unit,
-    onAddTransactionClick: () -> Unit
+    onAddTransactionClick: () -> Unit,
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
-    // Mock Data for the UI
-    val monthlyIncome = 25000.0
-    val monthlyExpense = 8450.0
-    val netBalance = monthlyIncome - monthlyExpense
+    val summary by viewModel.monthlySummary.collectAsState()
+    val recentTransactions by viewModel.recentTransactions.collectAsState()
+
+    val monthlyIncome = summary?.totalIncome ?: 0.0
+    val monthlyExpense = summary?.totalExpense ?: 0.0
+    val netBalance = summary?.balance ?: 0.0
     
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     
-    val mockTransactions = listOf(
-        MockTransaction(1200.0, TransactionType.EXPENSE, Category.FOOD, "Dinner at restaurant", Icons.Default.Restaurant),
-        MockTransaction(500.0, TransactionType.EXPENSE, Category.TRANSPORT, "Uber to office", Icons.Default.DirectionsCar),
-        MockTransaction(25000.0, TransactionType.INCOME, Category.SALARY, "April Salary", Icons.Default.AttachMoney),
-        MockTransaction(1500.0, TransactionType.EXPENSE, Category.SHOPPING, "Groceries", Icons.Default.ShoppingCart)
-    ).filter { selectedCategory == null || it.category == selectedCategory }
+    val filteredTransactions = if (selectedCategory == null) {
+        recentTransactions
+    } else {
+        recentTransactions.filter { it.category == selectedCategory }
+    }
 
     Scaffold(
         topBar = {
@@ -154,13 +158,13 @@ fun DashboardScreen(
                 )
             }
             
-            items(mockTransactions) { transaction ->
+            items(filteredTransactions) { transaction ->
                 TransactionCard(
                     amount = transaction.amount,
-                    type = transaction.type,
+                    type = if (transaction.type == TransactionType.INCOME) TransactionType.INCOME else TransactionType.EXPENSE,
                     categoryName = transaction.category.name,
                     note = transaction.note,
-                    icon = transaction.icon,
+                    icon = getIconForCategory(transaction.category),
                     onDelete = { /* TODO */ },
                     onClick = { /* TODO */ }
                 )
@@ -173,11 +177,13 @@ fun DashboardScreen(
     }
 }
 
-// Temporary data class for UI scaffolding
-data class MockTransaction(
-    val amount: Double,
-    val type: TransactionType,
-    val category: Category,
-    val note: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
-)
+@Composable
+fun getIconForCategory(category: Category): ImageVector {
+    return when (category) {
+        Category.FOOD -> Icons.Default.Restaurant
+        Category.TRANSPORT -> Icons.Default.DirectionsCar
+        Category.SHOPPING -> Icons.Default.ShoppingCart
+        Category.SALARY -> Icons.Default.AttachMoney
+        else -> Icons.Default.Add // Default icon
+    }
+}

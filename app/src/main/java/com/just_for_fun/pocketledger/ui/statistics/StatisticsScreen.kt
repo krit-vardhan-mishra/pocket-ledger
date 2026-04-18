@@ -14,10 +14,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatisticsScreen() {
+fun StatisticsScreen(
+    viewModel: StatisticsViewModel = hiltViewModel()
+) {
+    val summary by viewModel.monthlySummary.collectAsState()
+    val breakdown by viewModel.categoryBreakdown.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -38,15 +44,15 @@ fun StatisticsScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* TODO */ }) {
+                IconButton(onClick = { viewModel.previousPage() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
                 }
                 Text(
-                    text = "April 2026",
+                    text = viewModel.getFormattedDate(),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = { /* TODO */ }) {
+                IconButton(onClick = { viewModel.nextPage() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
                 }
             }
@@ -63,17 +69,34 @@ fun StatisticsScreen() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "Total Expense", style = MaterialTheme.typography.labelLarge)
-                    Text(text = "₹8450.00", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "₹${"%.2f".format(summary?.totalExpense ?: 0.0)}", 
+                        style = MaterialTheme.typography.headlineSmall, 
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Placeholder for Legend
             Column(modifier = Modifier.fillMaxWidth()) {
-                LegendItem("Food", "₹4200.00", "50%", Color.Red)
-                LegendItem("Transport", "₹1200.00", "14%", Color.Blue)
-                LegendItem("Shopping", "₹3050.00", "36%", Color.Magenta)
+                if (breakdown.isEmpty()) {
+                    Text(
+                        "No data for this month", 
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    breakdown.take(5).forEachIndexed { index, item ->
+                        val color = when (index % 4) {
+                            0 -> Color(0xFFE91E63)
+                            1 -> Color(0xFF2196F3)
+                            2 -> Color(0xFF4CAF50)
+                            else -> Color(0xFFFFC107)
+                        }
+                        LegendItem(item.category, "₹${"%.2f".format(item.amount)}", "${item.percentage.toInt()}%", color)
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -85,16 +108,28 @@ fun StatisticsScreen() {
             ) {
                 Card(modifier = Modifier.weight(1f)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Highest Spend Day", style = MaterialTheme.typography.labelMedium)
-                        Text("12 April", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text("₹1,200", color = Color(0xFFF44336), fontWeight = FontWeight.Bold)
+                        Text("Income", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            text = "₹${"%.0f".format(summary?.totalIncome ?: 0.0)}", 
+                            style = MaterialTheme.typography.titleMedium, 
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF4CAF50)
+                        )
                     }
                 }
                 Card(modifier = Modifier.weight(1f)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Top Category", style = MaterialTheme.typography.labelMedium)
-                        Text("Food", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text("₹4,200", color = Color(0xFFF44336), fontWeight = FontWeight.Bold)
+                        Text(
+                            text = breakdown.firstOrNull()?.category ?: "N/A", 
+                            style = MaterialTheme.typography.titleMedium, 
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "₹${"%.0f".format(breakdown.firstOrNull()?.amount ?: 0.0)}", 
+                            color = Color(0xFFF44336), 
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

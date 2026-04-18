@@ -11,11 +11,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.just_for_fun.pocketledger.data.model.enums.Category
 
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BudgetScreen() {
+fun BudgetScreen(
+    viewModel: BudgetViewModel = hiltViewModel()
+) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var exceedAlertsEnabled by remember { mutableStateOf(true) }
+    
+    val budgets by viewModel.budgets.collectAsState()
 
     Scaffold(
         topBar = {
@@ -79,8 +86,9 @@ fun BudgetScreen() {
                 )
             }
 
-            items(Category.values()) { category ->
-                var limit by remember { mutableStateOf("0") }
+            items(Category.entries.toTypedArray()) { category ->
+                val budget = budgets.find { it.category == category }
+                var limitText by remember(budget) { mutableStateOf(budget?.monthlyLimit?.toString() ?: "0") }
                 
                 Row(
                     modifier = Modifier
@@ -91,8 +99,12 @@ fun BudgetScreen() {
                 ) {
                     Text(text = category.name, modifier = Modifier.weight(1f))
                     OutlinedTextField(
-                        value = limit,
-                        onValueChange = { limit = it },
+                        value = limitText,
+                        onValueChange = { 
+                            limitText = it
+                            val newLimit = it.toDoubleOrNull() ?: 0.0
+                            viewModel.setBudget(category, newLimit)
+                        },
                         modifier = Modifier.width(150.dp),
                         leadingIcon = { Text("₹") },
                         singleLine = true
