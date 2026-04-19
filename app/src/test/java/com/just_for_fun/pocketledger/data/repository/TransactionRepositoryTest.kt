@@ -5,6 +5,7 @@ import com.just_for_fun.pocketledger.data.db.dao.TransactionDao
 import com.just_for_fun.pocketledger.data.model.Transaction
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,7 +66,14 @@ class TransactionRepositoryTest {
 
         every { transactionDao.getTransactionsByMonth("04", "2026") } returns transactionsFlow
 
-        val repository = TransactionRepository(transactionDao)
+        val repository = TransactionRepository(
+            transactionDao,
+            AppCoroutineDispatchers(
+                io = dispatcherRule.dispatcher,
+                default = dispatcherRule.dispatcher,
+                main = dispatcherRule.dispatcher
+            )
+        )
 
         val categoryTotals = repository.getCategoryTotals("04", "2026", TransactionType.EXPENSE).first()
         assertEquals(2, categoryTotals.size)

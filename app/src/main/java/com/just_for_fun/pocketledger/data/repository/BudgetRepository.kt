@@ -6,29 +6,40 @@ import com.just_for_fun.pocketledger.data.model.Budget
 import com.just_for_fun.pocketledger.data.model.ExceededCategory
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class BudgetRepository @Inject constructor(
     private val budgetDao: BudgetDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) {
 
     fun getAllBudgets(): Flow<List<Budget>> = budgetDao.getAllBudgets()
 
     suspend fun setBudget(category: Category, limit: Double) {
-        budgetDao.insertOrUpdate(Budget(category, limit))
+        withContext(dispatchers.io) {
+            budgetDao.insertOrUpdate(Budget(category, limit))
+        }
     }
 
     suspend fun getBudgetForCategory(category: Category): Budget? =
-        budgetDao.getBudgetForCategory(category)
+        withContext(dispatchers.io) {
+            budgetDao.getBudgetForCategory(category)
+        }
 
     suspend fun deleteBudget(category: Category) =
-        budgetDao.deleteByCategory(category)
+        withContext(dispatchers.io) {
+            budgetDao.deleteByCategory(category)
+        }
 
     fun getExceededCategoryDetails(month: String, year: String): Flow<List<ExceededCategory>> {
         return combine(
@@ -49,16 +60,18 @@ class BudgetRepository @Inject constructor(
                     null
                 }
             }.sortedByDescending { it.exceededBy }
-        }
+        }.flowOn(dispatchers.default)
     }
 
     fun getExceededCategories(month: String, year: String): Flow<List<Category>> {
-        return getExceededCategoryDetails(month, year).combine(budgetDao.getAllBudgets()) { details, _ ->
-            details.map { it.category }
-        }
+        return getExceededCategoryDetails(month, year)
+            .map { details -> details.map { it.category } }
+            .flowOn(dispatchers.default)
     }
 
     suspend fun getExceededCategoryDetailsSnapshot(month: String, year: String): List<ExceededCategory> {
-        return getExceededCategoryDetails(month, year).first()
+        return withContext(dispatchers.io) {
+            getExceededCategoryDetails(month, year).first()
+        }
     }
 }

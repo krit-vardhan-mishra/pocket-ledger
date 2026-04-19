@@ -6,6 +6,7 @@ import com.just_for_fun.pocketledger.data.model.DailyTotal
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import com.just_for_fun.pocketledger.domain.usecase.GetCategoryBreakdownUseCase
 import com.just_for_fun.pocketledger.domain.usecase.GetMonthlySummaryUseCase
 import com.just_for_fun.pocketledger.domain.usecase.MonthlySummary
@@ -33,6 +34,13 @@ class StatisticsViewModelTest {
     private val transactionRepository: TransactionRepository = mockk()
     private val getMonthlySummaryUseCase: GetMonthlySummaryUseCase = mockk()
     private val getCategoryBreakdownUseCase: GetCategoryBreakdownUseCase = mockk()
+    private val testDispatchers by lazy {
+        AppCoroutineDispatchers(
+            io = dispatcherRule.dispatcher,
+            default = dispatcherRule.dispatcher,
+            main = dispatcherRule.dispatcher
+        )
+    }
 
     @Test
     fun highestSpendDayAndTopCategory_areDerivedFromFlows() = runTest {
@@ -54,7 +62,12 @@ class StatisticsViewModelTest {
             MonthlySummary(totalIncome = 2000.0, totalExpense = 1250.0, balance = 750.0)
         )
 
-        val viewModel = StatisticsViewModel(transactionRepository, getMonthlySummaryUseCase, getCategoryBreakdownUseCase)
+        val viewModel = StatisticsViewModel(
+            transactionRepository,
+            getMonthlySummaryUseCase,
+            getCategoryBreakdownUseCase,
+            testDispatchers
+        )
         val highestSpendCollector = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.highestSpendDay.collect {}
         }
@@ -81,7 +94,12 @@ class StatisticsViewModelTest {
             MonthlySummary(totalIncome = 0.0, totalExpense = 0.0, balance = 0.0)
         )
 
-        val viewModel = StatisticsViewModel(transactionRepository, getMonthlySummaryUseCase, getCategoryBreakdownUseCase)
+        val viewModel = StatisticsViewModel(
+            transactionRepository,
+            getMonthlySummaryUseCase,
+            getCategoryBreakdownUseCase,
+            testDispatchers
+        )
         val canNavigateCollector = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.canNavigateNext.collect {}
         }

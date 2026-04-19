@@ -7,6 +7,7 @@ import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.data.repository.BudgetRepository
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import com.just_for_fun.pocketledger.domain.usecase.GetMonthlySummaryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -23,7 +25,8 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val budgetRepository: BudgetRepository,
-    private val getMonthlySummaryUseCase: GetMonthlySummaryUseCase
+    private val getMonthlySummaryUseCase: GetMonthlySummaryUseCase,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) : ViewModel() {
 
     private val calendar = Calendar.getInstance()
@@ -67,7 +70,9 @@ class DashboardViewModel @Inject constructor(
         } else {
             transactions.filter { it.category == category }
         }
-    }.stateIn(
+    }
+        .flowOn(dispatchers.default)
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -92,7 +97,7 @@ class DashboardViewModel @Inject constructor(
         note: String,
         date: Long
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatchers.io) {
             val transaction = Transaction(
                 id = id ?: 0L,
                 amount = amount,
@@ -111,7 +116,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun deleteTransaction(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatchers.io) {
             transactionRepository.deleteTransaction(id)
         }
     }

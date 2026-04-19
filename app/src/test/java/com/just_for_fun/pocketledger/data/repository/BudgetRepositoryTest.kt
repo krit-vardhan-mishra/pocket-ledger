@@ -7,6 +7,7 @@ import com.just_for_fun.pocketledger.data.model.Budget
 import com.just_for_fun.pocketledger.data.model.Transaction
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,7 +60,15 @@ class BudgetRepositoryTest {
         every { budgetDao.getAllBudgets() } returns budgetsFlow
         every { transactionDao.getTransactionsByMonth("04", "2026") } returns transactionsFlow
 
-        val repository = BudgetRepository(budgetDao, transactionDao)
+        val repository = BudgetRepository(
+            budgetDao,
+            transactionDao,
+            AppCoroutineDispatchers(
+                io = dispatcherRule.dispatcher,
+                default = dispatcherRule.dispatcher,
+                main = dispatcherRule.dispatcher
+            )
+        )
         val exceeded = repository.getExceededCategoryDetails("04", "2026").first()
 
         assertEquals(1, exceeded.size)

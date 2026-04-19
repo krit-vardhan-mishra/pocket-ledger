@@ -6,6 +6,7 @@ import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.data.repository.BudgetRepository
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import com.just_for_fun.pocketledger.domain.usecase.GetMonthlySummaryUseCase
 import com.just_for_fun.pocketledger.domain.usecase.MonthlySummary
 import io.mockk.coVerify
@@ -32,6 +33,13 @@ class DashboardViewModelTest {
     private val transactionRepository: TransactionRepository = mockk(relaxed = true)
     private val budgetRepository: BudgetRepository = mockk(relaxed = true)
     private val getMonthlySummaryUseCase: GetMonthlySummaryUseCase = mockk()
+    private val testDispatchers by lazy {
+        AppCoroutineDispatchers(
+            io = dispatcherRule.dispatcher,
+            default = dispatcherRule.dispatcher,
+            main = dispatcherRule.dispatcher
+        )
+    }
 
     @Test
     fun filterByCategory_returnsOnlyMatchingTransactions() = runTest {
@@ -60,7 +68,12 @@ class DashboardViewModelTest {
             MonthlySummary(totalIncome = 0.0, totalExpense = 200.0, balance = -200.0)
         )
 
-        val viewModel = DashboardViewModel(transactionRepository, budgetRepository, getMonthlySummaryUseCase)
+        val viewModel = DashboardViewModel(
+            transactionRepository,
+            budgetRepository,
+            getMonthlySummaryUseCase,
+            testDispatchers
+        )
         val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.filteredTransactions.collect {}
         }
@@ -86,7 +99,12 @@ class DashboardViewModelTest {
             MonthlySummary(totalIncome = 0.0, totalExpense = 0.0, balance = 0.0)
         )
 
-        val viewModel = DashboardViewModel(transactionRepository, budgetRepository, getMonthlySummaryUseCase)
+        val viewModel = DashboardViewModel(
+            transactionRepository,
+            budgetRepository,
+            getMonthlySummaryUseCase,
+            testDispatchers
+        )
 
         viewModel.saveTransaction(
             id = null,
@@ -120,7 +138,12 @@ class DashboardViewModelTest {
             MonthlySummary(totalIncome = 0.0, totalExpense = 0.0, balance = 0.0)
         )
 
-        val viewModel = DashboardViewModel(transactionRepository, budgetRepository, getMonthlySummaryUseCase)
+        val viewModel = DashboardViewModel(
+            transactionRepository,
+            budgetRepository,
+            getMonthlySummaryUseCase,
+            testDispatchers
+        )
 
         viewModel.saveTransaction(
             id = 99L,

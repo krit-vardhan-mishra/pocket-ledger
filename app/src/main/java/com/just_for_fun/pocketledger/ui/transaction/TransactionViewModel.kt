@@ -6,6 +6,7 @@ import com.just_for_fun.pocketledger.data.model.Transaction
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType as DomainTransactionType
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
-    private val repository: TransactionRepository
+    private val repository: TransactionRepository,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TransactionUiState>(TransactionUiState.Idle)
@@ -32,7 +34,7 @@ class TransactionViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(dispatchers.io) {
             _uiState.value = TransactionUiState.Loading
             try {
                 val transaction = Transaction(

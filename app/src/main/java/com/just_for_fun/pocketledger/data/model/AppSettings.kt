@@ -8,5 +8,7 @@ data class AppSettings(
     val notificationsEnabled: Boolean = false,
     val notificationHour: Int = 20,
     val notificationMinute: Int = 0,
-    val exceedAlertsEnabled: Boolean = true
+    val exceedAlertsEnabled: Boolean = true,
+    val useTempData: Boolean = false,
+    val themeMode: AppThemeMode = AppThemeMode.DEFAULT
 )

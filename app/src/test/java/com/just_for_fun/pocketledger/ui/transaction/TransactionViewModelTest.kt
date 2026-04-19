@@ -4,6 +4,7 @@ import com.just_for_fun.pocketledger.MainDispatcherRule
 import com.just_for_fun.pocketledger.data.model.enums.Category
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,10 +21,17 @@ class TransactionViewModelTest {
     val dispatcherRule = MainDispatcherRule()
 
     private val repository: TransactionRepository = mockk(relaxed = true)
+    private val testDispatchers by lazy {
+        AppCoroutineDispatchers(
+            io = dispatcherRule.dispatcher,
+            default = dispatcherRule.dispatcher,
+            main = dispatcherRule.dispatcher
+        )
+    }
 
     @Test
     fun addTransaction_invalidInput_setsErrorState() = runTest {
-        val viewModel = TransactionViewModel(repository)
+        val viewModel = TransactionViewModel(repository, testDispatchers)
 
         viewModel.addTransaction(
             note = "",
@@ -37,7 +45,7 @@ class TransactionViewModelTest {
 
     @Test
     fun addTransaction_validInput_callsInsertAndSetsSuccess() = runTest {
-        val viewModel = TransactionViewModel(repository)
+        val viewModel = TransactionViewModel(repository, testDispatchers)
 
         viewModel.addTransaction(
             note = "Lunch",

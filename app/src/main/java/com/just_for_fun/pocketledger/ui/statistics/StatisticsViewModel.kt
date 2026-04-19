@@ -6,6 +6,7 @@ import com.just_for_fun.pocketledger.data.model.CategoryTotal
 import com.just_for_fun.pocketledger.data.model.DailyTotal
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
 import com.just_for_fun.pocketledger.data.repository.TransactionRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import com.just_for_fun.pocketledger.domain.usecase.GetCategoryBreakdownUseCase
 import com.just_for_fun.pocketledger.domain.usecase.GetMonthlySummaryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
@@ -25,7 +27,8 @@ import javax.inject.Inject
 class StatisticsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val getMonthlySummaryUseCase: GetMonthlySummaryUseCase,
-    private val getCategoryBreakdownUseCase: GetCategoryBreakdownUseCase
+    private val getCategoryBreakdownUseCase: GetCategoryBreakdownUseCase,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) : ViewModel() {
 
     private val now = Calendar.getInstance()
@@ -39,6 +42,7 @@ class StatisticsViewModel @Inject constructor(
             selectedYearInt < now.get(Calendar.YEAR) ||
                 (selectedYearInt == now.get(Calendar.YEAR) && selectedMonthIndex < now.get(Calendar.MONTH) + 1)
         }
+        .flowOn(dispatchers.default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -71,6 +75,7 @@ class StatisticsViewModel @Inject constructor(
 
     val highestSpendDay: StateFlow<DailyTotal?> = dailyTotals
         .map { totals -> totals.maxByOrNull { it.amount } }
+        .flowOn(dispatchers.default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -79,6 +84,7 @@ class StatisticsViewModel @Inject constructor(
 
     val mostSpentCategory: StateFlow<CategoryTotal?> = categoryBreakdown
         .map { totals -> totals.maxByOrNull { it.amount } }
+        .flowOn(dispatchers.default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

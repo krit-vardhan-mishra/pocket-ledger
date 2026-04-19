@@ -22,6 +22,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAppCoroutineDispatchers(): AppCoroutineDispatchers {
+        return AppCoroutineDispatchers()
+    }
+
+    @Provides
+    @Singleton
     fun providePreferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
         return PreferenceDataStoreFactory.create(
             produceFile = { context.preferencesDataStoreFile("pocketledger_settings") }

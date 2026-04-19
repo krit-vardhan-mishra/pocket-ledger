@@ -6,8 +6,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.just_for_fun.pocketledger.data.model.AppSettings
 import com.just_for_fun.pocketledger.data.repository.SettingsRepository
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -17,14 +17,15 @@ import javax.inject.Singleton
 @Singleton
 class DailyBudgetWorkScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) {
 
     suspend fun syncWithCurrentSettings() {
         schedule(settingsRepository.getSettingsSnapshot())
     }
 
-    suspend fun schedule(settings: AppSettings) = withContext(Dispatchers.Default) {
+    suspend fun schedule(settings: AppSettings) = withContext(dispatchers.default) {
         val workManager = WorkManager.getInstance(context)
         if (!settings.notificationsEnabled) {
             workManager.cancelUniqueWork(WORK_NAME)

@@ -5,25 +5,32 @@ import com.just_for_fun.pocketledger.data.model.CategoryTotal
 import com.just_for_fun.pocketledger.data.model.DailyTotal
 import com.just_for_fun.pocketledger.data.model.Transaction
 import com.just_for_fun.pocketledger.data.model.enums.TransactionType
+import com.just_for_fun.pocketledger.di.AppCoroutineDispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TransactionRepository @Inject constructor(
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val dispatchers: AppCoroutineDispatchers = AppCoroutineDispatchers()
 ) {
 
-    suspend fun insertTransaction(transaction: Transaction) =
+    suspend fun insertTransaction(transaction: Transaction) = withContext(dispatchers.io) {
         transactionDao.insert(transaction)
+    }
 
-    suspend fun updateTransaction(transaction: Transaction) =
+    suspend fun updateTransaction(transaction: Transaction) = withContext(dispatchers.io) {
         transactionDao.update(transaction)
+    }
 
-    suspend fun deleteTransaction(id: Long) =
+    suspend fun deleteTransaction(id: Long) = withContext(dispatchers.io) {
         transactionDao.deleteById(id)
+    }
 
     fun getAllTransactions(): Flow<List<Transaction>> =
         transactionDao.getAllTransactions()
@@ -38,7 +45,9 @@ class TransactionRepository @Inject constructor(
         transactionDao.getTransactionsByDateRange(startMillis, endMillis)
 
     suspend fun getTodayExpenseTotal(startOfDay: Long, endOfDay: Long): Double =
-        transactionDao.getTodayExpenseTotal(startOfDay, endOfDay)
+        withContext(dispatchers.io) {
+            transactionDao.getTodayExpenseTotal(startOfDay, endOfDay)
+        }
 
     fun getMonthlyIncomeTotal(month: String, year: String): Flow<Double> =
         transactionDao.getMonthlyIncomeTotal(month, year)
@@ -68,7 +77,7 @@ class TransactionRepository @Inject constructor(
                     }
                     .sortedByDescending { it.amount }
             }
-        }
+        }.flowOn(dispatchers.default)
     }
 
     fun getDailyTotals(
@@ -90,6 +99,6 @@ class TransactionRepository @Inject constructor(
                     )
                 }
                 .sortedBy { it.dayOfMonth }
-        }
+        }.flowOn(dispatchers.default)
     }
 }

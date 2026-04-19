@@ -36,16 +36,17 @@ import com.just_for_fun.pocketledger.data.model.enums.displayName
 import kotlin.math.atan2
 import kotlin.math.hypot
 
+// Warm, semantically meaningful palette that harmonises with the amber primary.
 private val chartColors = listOf(
-    Color(0xFFEF5350),
-    Color(0xFF42A5F5),
-    Color(0xFF66BB6A),
-    Color(0xFFFFCA28),
-    Color(0xFFAB47BC),
-    Color(0xFF26C6DA),
-    Color(0xFFFF7043),
-    Color(0xFF8D6E63),
-    Color(0xFF78909C)
+    Color(0xFFFFBA2B), // amber   – matches app primary
+    Color(0xFF4D6544), // sage green
+    Color(0xFF1565C0), // deep blue
+    Color(0xFFC62828), // deep red
+    Color(0xFF6A1B9A), // purple
+    Color(0xFF00838F), // teal
+    Color(0xFFE65100), // deep orange
+    Color(0xFF4527A0), // deep purple
+    Color(0xFF546E7A)  // blue-grey
 )
 
 @Composable
@@ -72,7 +73,7 @@ fun ExpenseDonutChart(
                         val centerX = canvasSize.width / 2f
                         val centerY = canvasSize.height / 2f
                         val radius = minOf(canvasSize.width, canvasSize.height) * 0.42f
-                        val strokeWidth = radius * 0.36f
+                        val strokeWidth = radius * 0.38f
                         val innerRadius = radius - strokeWidth / 2f
                         val outerRadius = radius + strokeWidth / 2f
 
@@ -101,24 +102,22 @@ fun ExpenseDonutChart(
                     }
                 }
         ) {
-            if (data.isEmpty()) {
-                return@Canvas
-            }
+            if (data.isEmpty()) return@Canvas
 
             val radius = minOf(size.width, size.height) * 0.42f
-            val strokeWidth = radius * 0.36f
-            val topLeft = Offset(
-                x = center.x - radius,
-                y = center.y - radius
-            )
+            val strokeWidth = radius * 0.38f
+            val gap = 2f  // tiny gap between slices for a cleaner look
+            val topLeft = Offset(center.x - radius, center.y - radius)
             val arcSize = Size(radius * 2, radius * 2)
 
             var startAngle = -90f
             val total = data.sumOf { it.amount }
             data.forEachIndexed { index, item ->
-                val sweep = ((item.amount / total) * 360.0).toFloat()
+                val sweep = ((item.amount / total) * 360.0).toFloat() - gap
                 val arcColor = chartColors[index % chartColors.size]
-                val width = if (selectedCategory?.category == item.category) strokeWidth * 1.12f else strokeWidth
+                val isSelected = selectedCategory?.category == item.category
+                val width = if (isSelected) strokeWidth * 1.14f else strokeWidth
+
                 drawArc(
                     color = arcColor,
                     startAngle = startAngle,
@@ -126,22 +125,26 @@ fun ExpenseDonutChart(
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
-                    style = Stroke(width = width, cap = StrokeCap.Butt)
+                    style = Stroke(width = width, cap = StrokeCap.Round)
                 )
-                startAngle += sweep
+                startAngle += sweep + gap
             }
         }
 
-        Column(modifier = Modifier.align(Alignment.Center)) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 text = selectedCategory?.category?.displayName() ?: "Total",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "₹${"%.0f".format(selectedCategory?.amount ?: data.sumOf { it.amount })}",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -158,14 +161,14 @@ fun DailyBarChart(
     val amountByDay = remember(totals) { totals.associateBy { it.dayOfMonth } }
     val maxAmount = remember(totals) { (totals.maxOfOrNull { it.amount } ?: 0.0).coerceAtLeast(1.0) }
     val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    val secondaryColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
     Column(modifier = modifier) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(200.dp)
                 .onSizeChanged { canvasSize = it }
                 .pointerInput(totals, daysInMonth, canvasSize) {
                     detectTapGestures { tapOffset ->
@@ -179,19 +182,17 @@ fun DailyBarChart(
                     }
                 }
         ) {
-            if (daysInMonth <= 0) {
-                return@Canvas
-            }
+            if (daysInMonth <= 0) return@Canvas
 
             val spacing = size.width / daysInMonth
-            val barWidth = spacing * 0.55f
+            val barWidth = spacing * 0.50f
             val bottomY = size.height
-            val chartHeight = size.height - 10f
+            val chartHeight = size.height - 8f
 
             for (day in 1..daysInMonth) {
                 val amount = amountByDay[day]?.amount ?: 0.0
                 val normalized = (amount / maxAmount).toFloat().coerceIn(0f, 1f)
-                val barHeight = chartHeight * normalized
+                val barHeight = (chartHeight * normalized).coerceAtLeast(if (amount > 0) 6f else 0f)
                 val left = (day - 1) * spacing + ((spacing - barWidth) / 2f)
                 val top = bottomY - barHeight
                 val barColor = if (selectedDay?.dayOfMonth == day) primaryColor else secondaryColor
@@ -200,7 +201,7 @@ fun DailyBarChart(
                     color = barColor,
                     topLeft = Offset(left, top),
                     size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(8f, 8f)
+                    cornerRadius = CornerRadius(6f, 6f)
                 )
             }
         }
@@ -208,16 +209,17 @@ fun DailyBarChart(
         if (selectedDay != null) {
             Surface(
                 modifier = Modifier
-                    .padding(top = 8.dp)
+                    .padding(top = 10.dp)
                     .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(12.dp)
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text(
-                    text = "Day ${selectedDay.dayOfMonth}: ₹${"%.0f".format(selectedDay.amount)}",
-                    modifier = Modifier.padding(12.dp),
+                    text = "Day ${selectedDay.dayOfMonth} — ₹${"%.0f".format(selectedDay.amount)}",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
