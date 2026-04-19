@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    outputs:
+      version_name: ${{ steps.version.outputs.version_name }}
+      apk_name: ${{ steps.version.outputs.apk_name }}
 
     steps:
       - name: Checkout
@@ -24,6 +27,19 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x gradlew
 
+      - name: Read app version from Gradle
+        id: version
+        shell: bash
+        run: |
+          VERSION_NAME=$(grep -m1 'versionName\s*=' app/build.gradle.kts | sed -E 's/.*versionName\s*=\s*"([^"]+)".*/\1/')
+          if [ -z "$VERSION_NAME" ]; then
+            echo "Could not read versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          APK_NAME="pocket-ledger-${VERSION_NAME}.apk"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+
       - name: Run unit tests
         run: ./gradlew test
 
@@ -33,12 +49,17 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
 
+      - name: Rename debug APK with app version
+        shell: bash
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/${{ steps.version.outputs.apk_name }}"
+
       - name: Upload debug APK artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/${{ steps.version.outputs.apk_name }}
 
       - name: Upload test reports
         if: always()
@@ -72,13 +93,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: main-latest
-          name: Main Latest APK
+          name: PocketLedger v${{ needs.build-and-test.outputs.version_name }} (Main Latest APK)
           body: |
-            Automated APK from latest commit on main.
+            Automated PocketLedger debug APK from latest commit on main.
+            Version: v${{ needs.build-and-test.outputs.version_name }}
+            File: ${{ needs.build-and-test.outputs.apk_name }}
             Commit: ${{ github.sha }}
             Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           prerelease: true
           make_latest: false
-          files: release-assets/app-debug.apk
+          files: release-assets/${{ needs.build-and-test.outputs.apk_name }}
           overwrite_files: true
           fail_on_unmatched_files: true

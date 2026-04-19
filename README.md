@@ -27,6 +27,22 @@
 	</tr>
 </table>
 
+<!-- Launch pads: four images, stacked one per row -->
+<div align="center" style="margin: 24px 0;">
+	<div style="margin: 12px 0;">
+		<img src="app-screenshots/launch_pad_1.png" alt="Launch Pad 1" />
+	</div>
+	<div style="margin: 12px 0;">
+		<img src="app-screenshots/launch_pad_2.png" alt="Launch Pad 2" />
+	</div>
+	<div style="margin: 12px 0;">
+		<img src="app-screenshots/launch_pad_3.png" alt="Launch Pad 3" />
+	</div>
+	<div style="margin: 12px 0;">
+		<img src="app-screenshots/launch_pad_4.png" alt="Launch Pad 4" />
+	</div>
+</div>
+
 <h3>📱 App Screenshots</h3>
 
 <table>
