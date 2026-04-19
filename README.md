@@ -4,6 +4,70 @@
 
 **PocketLedger** is a high-performance, offline-first personal finance application built natively for Android. It combines modern architecture with a privacy-centric design to help users track their spending without compromising their data.
 
+## ✨ App Launchpad
+
+<table>
+	<tr>
+		<td width="50%" valign="top">
+			<h3>Track your money effortlessly.</h3>
+			<p>
+				The offline-first personal finance tracker.<br>
+				<strong>No login. No tracking. No cloud.</strong>
+			</p>
+			<p>
+				<img src="https://img.shields.io/badge/Simple-E7C98A?style=for-the-badge" alt="Simple" />
+				<img src="https://img.shields.io/badge/Clean-E7C98A?style=for-the-badge" alt="Clean" />
+				<img src="https://img.shields.io/badge/Private-E7C98A?style=for-the-badge" alt="Private" />
+			</p>
+		</td>
+		<td width="50%" align="center">
+			<img src="app-screenshots/analytics_screenshot.png" alt="PocketLedger Analytics" width="43%" />
+			<img src="app-screenshots/dasbhoard_screenshot.png" alt="PocketLedger Dashboard" width="47%" />
+		</td>
+	</tr>
+</table>
+
+<h3>📱 App Screenshots</h3>
+
+<table>
+	<tr>
+		<td align="center" width="25%">
+			<img src="app-screenshots/dasbhoard_screenshot.png" alt="Dashboard" width="90%" /><br>
+			<sub><b>Dashboard</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/analytics_screenshot.png" alt="Analytics" width="90%" /><br>
+			<sub><b>Analytics</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/history_screenshot.png" alt="History" width="90%" /><br>
+			<sub><b>Transaction History</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/budget_screenshot.png" alt="Budget" width="90%" /><br>
+			<sub><b>Budget Settings</b></sub>
+		</td>
+	</tr>
+	<tr>
+		<td align="center" width="25%">
+			<img src="app-screenshots/add_transaction.png" alt="Add Transaction" width="90%" /><br>
+			<sub><b>Add Transaction</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/daily_spending.png" alt="Daily Spending" width="90%" /><br>
+			<sub><b>Daily Spending</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/empty_dashbaord.png" alt="Empty Dashboard" width="90%" /><br>
+			<sub><b>Empty State</b></sub>
+		</td>
+		<td align="center" width="25%">
+			<img src="app-screenshots/splash_screen.png" alt="Splash Screen" width="90%" /><br>
+			<sub><b>Splash Screen</b></sub>
+		</td>
+	</tr>
+</table>
+
 ## 🚀 Key Features
 
 - **Privacy-First Storage:** All data stays on your device in a secure Room database. No cloud, no tracking.
